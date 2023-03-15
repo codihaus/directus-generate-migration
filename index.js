@@ -125,7 +125,7 @@ const fieldGen = {
         return fieldGen.normal({
             data_type: dataType,
             is_primary_key: true,
-            has_auto_increment: true,
+            has_auto_increment: dataType === 'integer',
         }, {
             hidden: true
         })
