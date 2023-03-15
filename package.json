@@ -1,6 +1,6 @@
 {
   "name": "directus-migration-tools",
-  "version": "1.0.02",
+  "version": "1.0.04",
   "description": "",
   "main": "index.js",
   "scripts": {

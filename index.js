@@ -127,7 +127,8 @@ const fieldGen = {
             is_primary_key: true,
             has_auto_increment: dataType === 'integer',
         }, {
-            hidden: true
+            hidden: true,
+            special: dataType === 'uuid' ? 'uuid' : null
         })
     },
 
