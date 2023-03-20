@@ -19,5 +19,16 @@
     "dependencies": {
         "@directus/sdk": "^10.3.1",
         "directus": "^9.23.1"
+    },
+    "files": [
+        "helper/*",
+        "lib/*",
+        "directus.class.js",
+        "miggration.class.js"
+    ],
+    "exports": {
+        ".": "./index.js",
+        "./helper": "./helper",
+        "./lib": "./lib"
     }
 }
