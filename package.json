@@ -1,6 +1,6 @@
 {
     "name": "directus-migration-tools",
-    "version": "1.0.05",
+    "version": "1.0.06",
     "description": "",
     "main": "index.js",
     "scripts": {
@@ -17,7 +17,6 @@
     },
     "homepage": "https://github.com/codihaus/directus-generate-migration#readme",
     "dependencies": {
-        "@directus/sdk": "^10.3.1",
         "directus": "^9.23.1"
     },
     "files": [
