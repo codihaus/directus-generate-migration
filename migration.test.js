@@ -1,14 +1,7 @@
-const MiggrationClass = require('../miggration.class')
-const DirectusClass = require('../directus.class')
+const MiggrationClass = require('./miggration.class')
 
 let migration = new MiggrationClass()
 let genField = migration.generateField
-
-let directus = new DirectusClass("http://127.0.0.1:62003" , {
-		auth: {
-			staticToken: "WHha7Pe_6amP43J7VW8Cca2RK3RjNmnD"
-		}
-	})
 
 const config = [
 	// {
@@ -104,26 +97,13 @@ const config = [
 ]
 
 
-//migration.convertConfig(config)
-
-const test = async () =>{
-	let {collections,relations} = directus.convertConfig(config)
-
-	//console.log(JSON.stringify(collections,null,4))
-
-	await directus.deleteCollections()
-
-	//await directus.createCollections(collections)
-	//return directus.createData(collections,relations)
-
-}
-
-
-test()
-// module.exports = {
-// 	async up(knex) {
-// 		//let migrate = await migration.load(knex,config)
-// 		//migration.generate()
-//
-// 	} ,
-// };
+module.exports = {
+	async up(knex) {
+		await migration.upKnex(knex,config)
+		//migration.generate()
+	} ,
+	async down(knex) {
+		await migration.downKnex(knex,config)
+		//migration.generate()
+	} ,
+};
