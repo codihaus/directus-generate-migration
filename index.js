@@ -62,6 +62,28 @@ const relationGen = {
                 "one_deselect_action": "nullify"
             }
         }
+    },
+    schemaM2m(dataType, fkTable, fkField) {
+        return {
+            data_type: dataType,
+            foreign_key_table: fkTable,
+            foreign_key_column: fkField
+        }
+    },
+    relationM2m(dataType, fkTable, fkField){
+        return {
+            "collection": "news_tags",
+            "related_collection": fkTable,
+            "meta": {
+                "one_field": null,
+                "sort_field": null,
+                "one_deselect_action": "nullify",
+                "junction_field": fkField
+            },
+            "schema": {
+                "on_delete": "SET NULL"
+            }
+        }
     }
 }
 
@@ -142,6 +164,23 @@ const fieldGen = {
             meta: {
                 interface: "select-dropdown-m2o",
                 ...meta
+            },
+            relation: relationGen.relationM2o(fkName, fkTable, fkField)
+        }
+    },
+
+    m2m(fkTable,fkField,fkName,meta={},schema={}){
+        return {
+            schema: {
+                ...defaultSchemaField,
+                ...relationGen.schemaM2m("alias", fkTable, fkField),
+                ...schema
+            },
+            meta: {
+                "interface": "list-m2m",
+                "special": [
+                    "m2m"
+                ],
             },
             relation: relationGen.relationM2o(fkName, fkTable, fkField)
         }

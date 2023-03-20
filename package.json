@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/codihaus/directus-generate-migration#readme",
   "dependencies": {
+    "@directus/sdk": "^10.3.1",
     "directus": "^9.23.1"
   }
 }
