@@ -1,5 +1,4 @@
-const MiggrationClass = require('../miggration.class')
-const DirectusClass = require('../directus.class')
+
 
 let migration = new MiggrationClass()
 let genField = migration.generateField

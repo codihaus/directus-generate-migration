@@ -1,8 +1,12 @@
-const {getSchema} = require("directus/utils/get-schema");
 const CollectionClass = require('./lib/collection.class')
 const FieldClass = require('./lib/field.class')
 const RelationClass = require('./lib/relation.class')
-const logger = require("directus/logger");
+
+const {
+	filterFieldsToCreate ,
+	convertConfig
+} = require('./utils/migration.utils')
+
 module.exports = class MigrationClass {
 
 	collections = []
@@ -23,12 +27,12 @@ module.exports = class MigrationClass {
 				meta: options?.meta || {} ,
 				schema: options?.schema || {}
 			} , fields_extend) ,
-			generateO2m: (related_collection , field_related) => {
-			}
+			// generateO2m: (related_collection , field_related) => {
+			// }
 		}
 	}
 
-	 async load(knex , data) {
+	async load(knex , data) {
 		this.collectionsClass = await this.collectionsClass.load(knex)
 		this.fieldsClass = await this.fieldsClass.load(knex)
 		this.relationsClass = await this.relationsClass.load(knex)
@@ -39,76 +43,73 @@ module.exports = class MigrationClass {
 	}
 
 
-	convertConfig(data) {
-		try {
-			if (!!data && !Array.isArray(data)) throw Error("No data generate")
+	async upCreateKnex(knex , config) {
+		let {collections , relations} = await this.getDataAndConvert(knex , config)
 
-			//parse collections
-			this.collections = this.parseCollections(data)
-			//console.log("collections: " , JSON.stringify(this.collections , null , 4))
-
-			return this.generateData(this.collections)
-
-		} catch (e) {
-			console.log('Error convertConfig: ' , e)
-		}
-	}
-
-
-	async upKnex(knex,config){
-		let data_directus = await this.loadDataDirectus(knex)
-		let {collections,relations} = this.convertConfig(config,data_directus.collections,data_directus.fields)
-		return this.load(knex,config).then(async (service)=>{
-			return service.collectionsClass.createCollections(collections).then(async()=>{
+		return this.load(knex , config).then(async (service) => {
+			return service.collectionsClass.createCollections(collections).then(async () => {
 				return this.relationsClass.createRelations(relations)
 			})
-		}).catch(e=>{
-			console.log('Err upKnex:',e)
+		}).catch(e => {
+			console.log('Err upCreateKnex:' , e)
 		})
 
 	}
 
-	async downKnex(knex,config){
-		let data_directus = await this.loadDataDirectus(knex)
-		let {collections} = this.convertConfig(config,data_directus.collections,data_directus.fields)
-		return this.load(knex,config).then(async (service)=>{
+	async downCreateKnex(knex , config) {
+		let {collections} = await this.getDataAndConvert(knex , config)
+		return this.load(knex , config).then(async (service) => {
 			return service.collectionsClass.deleteCollections(collections)
-		}).catch(e=>{
-			console.log('Err downKnex:',e)
+		}).catch(e => {
+			console.log('Err downCreateKnex:' , e)
 		})
-
 	}
 
-	parseCollections(data) {
-		try {
-			return data.map(item => {
+	async upUpdateKnex(knex , config) {
+		let {collections , data_directus , relations} = await this.getDataAndConvert(knex , config)
 
-				let output = {
-					collection: item.collection.name ,
-					fields: this.parseFields(item.collection.name , item.fields) ,
-					meta: {
-						...this.collectionsClass.collectionMeta ,
-						...item.collection?.meta
-					} ,
+		let fields_create = filterFieldsToCreate(collections , data_directus)
 
-				}
+		relations = relations.filter(item => [
+			...fields_create ,
+			//...fields_update
+		].some(ite => ite.collection === item.collection && ite.field === item.field))
 
-				if (output.fields.length > 0) {
-					output["schema"] = {
-						...this.collectionsClass.collectionSchema
-					}
-				}
-				return output
+		return this.load(knex , config).then(async (service) => {
+			if (!!fields_create.length) {
+				await service.fieldsClass.createFields(fields_create)
+			}
+			// if(fields_update.length){
+			// 	await service.fieldsClass.updateFields(fields_update)
+			// }
+			if (!!relations.length) {
+				await service.relationsClass.createRelations(relations)
+			}
+		}).catch(e => {
+			console.log('Err upUpdateKnex:' , e)
+		})
+	}
 
-			})
-		} catch (e) {
-			console.log("Err parseCollections: " , e)
-			return []
-		}
+	async downUpdateKnex(knex , config) {
+		let {collections , data_directus} = await this.getDataAndConvert(knex , config)
+		let fields_create = filterFieldsToCreate(collections , data_directus)
+
+		return this.load(knex , config).then(async (service) => {
+			return service.fieldsClass.deleteField(fields_create)
+		}).catch(e => {
+			console.log('Err downUpdateKnex:' , e)
+		})
 	}
 
 
-	 async loadDataDirectus(knex) {
+	async getDataAndConvert(knex , config) {
+		let data_directus = await this.loadDataDirectus(knex)
+		let {collections , relations} = convertConfig(config , data_directus.collections , data_directus.fields)
+
+		return {collections , relations , data_directus}
+	}
+
+	async loadDataDirectus(knex) {
 		return this.load(knex).then(migration => {
 			return Promise.all([
 				migration.collectionsClass.readAll() ,
@@ -117,8 +118,8 @@ module.exports = class MigrationClass {
 			]).then(data => {
 
 				return {
-					collections: data[0],
-					fields: data[1],
+					collections: data[0] ,
+					fields: data[1] ,
 					relations: data[2]
 				}
 			})
@@ -127,222 +128,5 @@ module.exports = class MigrationClass {
 		})
 	}
 
-	generateData(collections_parse,collections_directus = [], fields_directus = []) {
-
-		//data from directus
-		let fields_primary_directus = fields_directus.filter(field => field.schema && field.schema.is_primary_key) || []
-
-		//data from migrations
-		let fields_primary = []
-
-		let fields_related = []
-		let field_normal = []
-		let relations_migration = []
-
-
-		const pushField = (fields_primary , field_normal , fields_related , fields , collection) => {
-			for (let field of fields) {
-				if (field.schema && field.collection === collection && field.schema.is_primary_key) {
-					fields_primary.push(field)
-				} else if (field.related_collection && this.fieldsClass.relatedText.includes(field.type)) {
-					fields_related.push(field)
-				} else {
-					field_normal.push(field)
-				}
-			}
-		}
-
-
-		const parseFieldsRelated = () => {
-			for (let field of fields_related) {
-				switch (field.type) {
-					case "$M2O$":
-						let field_related = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
-						field.type = field_related.type || "integer" || "string"
-						relations_migration.push(this.relationsClass.genM2o(field.collection , field.field , field.related_collection , field_related.field , field?.relations_options))
-						break;
-					case  "$M2M$":
-						field.type = "alias"
-						//create collection temp
-						let collection_temp = this.collectionsClass.genM2m(field.collection , field.field , [...collections_directus , ...collections_parse])
-						collections_parse.push(collection_temp)
-						fields_related.push({
-							collection: collection_temp.collection ,
-							field: "id" ,
-							type: "integer" ,
-							schema: {
-								is_primary_key: true ,
-								has_auto_increment: true
-							} ,
-							meta: {
-								"hidden": true
-							}
-						})
-						//create field related
-						let field_related_left = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
-						let field_related_right = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
-
-						let field_left = {
-							collection: collection_temp.collection ,
-							field: `${field_related_left.collection}_${field_related_left.field}` ,
-							...this.fieldsClass.generateM2o(field_related_left.collection , {
-								hidden: true
-							} , {} , {
-								meta: {
-									one_field: field.field ,
-									junction_field: `${field_related_right.collection}_${field_related_right.field}`
-								} ,
-								schema: {
-									on_delete: "CASCADE"
-								}
-							})
-						}
-						let field_right = {
-							collection: collection_temp.collection ,
-							field: `${field_related_right.collection}_${field_related_right.field}` ,
-							...this.fieldsClass.generateM2o(field_related_right.collection , {
-								hidden: true
-							} , {} , {
-								meta: {
-									junction_field: `${field_related_left.collection}_${field_related_left.field}`
-								} ,
-								schema: {
-									on_delete: "CASCADE"
-								}
-							})
-						}
-
-						fields_related.push(field_left)
-						fields_related.push(field_right)
-
-						// relations_migration.push(...this.relationsClass.genM2m(collection_temp.collection , field.field , {
-						// 	field: field_left.field ,
-						// 	collection: field_left.collection
-						// } , {
-						// 	field: field_right.field ,
-						// 	collection: field_right.collection
-						// }))
-
-						if (field.fields_extend) {
-							let fields_extend = this.parseFields(collection_temp.collection , field.fields_extend)
-							//console.log("collection_temp" , collection_temp.fields)
-							pushField(fields_primary , field_normal , fields_related , [...collection_temp.fields , ...fields_extend] , collection_temp.collection)
-							parseFieldsRelated()
-							//console.log("fields_extend" , fields_primary)
-						}
-						break;
-					case "$O2M$":
-
-						break;
-				}
-			}
-		}
-
-		function compareObjects(a , b) {
-			// Xử lý các phần tử không có thuộc tính "fields" hoặc "schema"
-			if (!a.fields && !a.schema) {
-				return -1; // a lên đầu
-			} else if (!b.fields && !b.schema) {
-				return 1; // b lên đầu
-			}
-
-			// Xử lý các phần tử có thuộc tính "collection" là thuộc tính "group" của các phần tử còn lại
-			if (a.meta?.group && b.collection === a.meta.group) {
-				return 1;
-			}
-			if (b.meta?.group && a.collection === b.meta.group) {
-				return -1;
-			}
-
-			// Xử lý các phần tử còn lại
-			return 0; // không đổi vị trí
-		}
-
-		const pushFieldToCollection = (fields , collections) => {
-			for (let collection of collections) {
-
-				collection.fields = fields.filter(field => field.collection === collection.collection)
-					.map(field => ({
-						collection: field.collection ,
-						field: field.field ,
-						type: field.type ,
-						meta: field.meta ,
-						schema: field.schema
-					}))
-
-				if (collection.fields.length === 0) {
-					delete collection.fields
-					delete collection.schema
-				}
-			}
-			collections.sort(compareObjects)
-		}
-
-		for (let item of collections_parse) {
-			pushField(fields_primary , field_normal , fields_related , item.fields , item.collection)
-		}
-
-		parseFieldsRelated()
-
-
-		//console.log("relations_migration",this.getUniqueArray(relations_migration))
-		//console.log("fields_primary",fields_primary)
-		//console.log("field_normal",field_normal)
-		//console.log("fields_related",fields_related)
-		//console.log("relations_migration",relations_migration)
-		//console.log("collections_parse" , collections_parse)
-
-		pushFieldToCollection([...fields_primary , ...field_normal , ...fields_related] , collections_parse)
-
-
-		return {
-			collections: this.getUniqueArray(collections_parse) ,
-			relations: this.getUniqueArray(relations_migration)
-		}
-	}
-
-	parseFields(collection , fields) {
-		try {
-			let output = []
-			for (let field in fields) {
-
-				let field_parse = {
-					"collection": collection ,
-					"field": field ,
-					"type": fields[field].type ?? 'string' ,
-					"meta": {
-						...this.fieldsClass.fieldMeta ,
-						...fields[field].meta ?? {} ,
-					} ,
-					related_collection: fields[field].related_collection ?? null
-				}
-
-				if (!!fields[field].schema) {
-					field_parse["schema"] = {
-						...this.fieldsClass.fieldSchema ,
-						...(fields[field].schema ?? {})
-					}
-				}
-
-				if (!!fields[field].fields_extend) {
-					field_parse["fields_extend"] = {
-						...(fields[field].fields_extend ?? {})
-					}
-				}
-				output.push(field_parse);
-			}
-
-			return output
-		} catch (e) {
-			console.log("Err parseFields: " , e)
-			return []
-		}
-	}
-
-	getUniqueArray(arr) {
-		return arr.filter((item , index) => {
-			return arr.indexOf(item) === index;
-		});
-	}
 }
 

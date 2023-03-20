@@ -1,7 +1,6 @@
-const MiggrationClass = require('./miggration.class')
+const {generateField,upCreateKnex,downCreateKnex} = require('./main')
 
-let migration = new MiggrationClass()
-let genField = migration.generateField
+
 
 const config = [
 	// {
@@ -9,8 +8,8 @@ const config = [
 	// 		name: "product" ,
 	// 	} ,
 	// 	fields: {
-	// 		id: genField.genPrimaryKey("uuid") ,
-	// 		name: genField.genNormal()
+	// 		id: generateField.genPrimaryKey("uuid") ,
+	// 		name: generateField.genNormal()
 	// 	}
 	// } ,
 	// {
@@ -21,8 +20,8 @@ const config = [
 	// 		}
 	// 	} ,
 	// 	fields: {
-	// 		code: genField.genPrimaryKey("string") ,
-	// 		name: genField.genNormal()
+	// 		code: generateField.genPrimaryKey("string") ,
+	// 		name: generateField.genNormal()
 	// 	}
 	// } ,
 	{
@@ -50,8 +49,8 @@ const config = [
 			}
 		} ,
 		fields: {
-			id: genField.genPrimaryKey() ,
-			title: genField.genNormal() ,
+			id: generateField.genPrimaryKey() ,
+			title: generateField.genNormal() ,
 		}
 	} ,
 	{
@@ -62,8 +61,8 @@ const config = [
 			}
 		} ,
 		fields: {
-			id: genField.genPrimaryKey() ,
-			title: genField.genNormal() ,
+			id: generateField.genPrimaryKey() ,
+			title: generateField.genNormal() ,
 		}
 	} ,
 	{
@@ -74,23 +73,23 @@ const config = [
 			}
 		} ,
 		fields: {
-			id: genField.genPrimaryKey() ,
-			title: genField.genNormal() ,
-			date_created: genField.genDatetime("date-created") ,
-			date_updated: genField.genDatetime("date-updated") ,
-			category: genField.generateM2o("news_category") ,
-			tags: genField.generateM2m("tags") ,
-			// translations: genField.generateM2m("languages" , {
+			id: generateField.genPrimaryKey() ,
+			title: generateField.genNormal() ,
+			date_created: generateField.genDatetime("date-created") ,
+			date_updated: generateField.genDatetime("date-updated") ,
+			category: generateField.generateM2o("news_category") ,
+			tags: generateField.generateM2m("tags") ,
+			// translations: generateField.generateM2m("languages" , {
 			// 	meta: {
 			// 		special: ["translations"] ,
 			// 		interface: "translations"
 			// 	}
 			// } , {
-			// 	title: genField.genNormal() ,
-			// 	intro: genField.genNormal() ,
-			// 	test: genField.generateM2o("languages") ,
-			// 	field_m2o: genField.generateM2o("tags") ,
-			// 	field_m2m: genField.generateM2m("news_category")
+			// 	title: generateField.genNormal() ,
+			// 	intro: generateField.genNormal() ,
+			// 	test: generateField.generateM2o("languages") ,
+			// 	field_m2o: generateField.generateM2o("tags") ,
+			// 	field_m2m: generateField.generateM2m("news_category")
 			// }) ,
 		}
 	}
@@ -99,11 +98,9 @@ const config = [
 
 module.exports = {
 	async up(knex) {
-		await migration.upKnex(knex,config)
-		//migration.generate()
+		await upCreateKnex(knex,config)
 	} ,
 	async down(knex) {
-		await migration.downKnex(knex,config)
-		//migration.generate()
+		await downCreateKnex(knex,config)
 	} ,
 };
