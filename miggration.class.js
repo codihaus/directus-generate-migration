@@ -2,6 +2,7 @@ const {getSchema} = require("directus/utils/get-schema");
 const CollectionClass = require('./lib/collection.class')
 const FieldClass = require('./lib/field.class')
 const RelationClass = require('./lib/relation.class')
+const logger = require("directus/logger");
 module.exports = class MigrationClass {
 
 	collections = []
@@ -109,51 +110,69 @@ module.exports = class MigrationClass {
 				}
 			}
 		}
-
 		const parseFieldsRelated = () => {
 			for (let field of fields_related) {
 				switch (field.type) {
 					case "$M2O$":
 						let field_related = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
 						field.type = field_related.type || "integer" || "string"
-						relations_migration.push(this.relationsClass.genM2o(field.collection , field.field , field.related_collection , field_related.field))
-
-
+						relations_migration.push(this.relationsClass.genM2o(field.collection , field.field , field.related_collection , field_related.field , field?.relations_options))
 						break;
 					case  "$M2M$":
 						field.type = "alias"
 						//create collection temp
 						let collection_temp = this.collectionsClass.genM2m(field.collection , field.field , [...collections_directus , ...collections_parse])
 						collections_parse.push(collection_temp)
+						fields_related.push({
+							collection: collection_temp.collection ,
+							field: "id" ,
+							type: "integer" ,
+							schema: {
+								is_primary_key: true ,
+								has_auto_increment: true
+							} ,
+							meta: {
+								"hidden": true
+							}
+						})
 						//create field related
 						let field_related_left = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
+						let field_related_right = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
+
 						let field_left = {
 							collection: collection_temp.collection ,
-							field: `${field.collection}_${field_related_left.field}` ,
+							field: `${field_related_left.collection}_${field_related_left.field}` ,
 							...this.fieldsClass.generateM2o(field_related_left.collection , {
 								hidden: true
+							} , {} , {
+								meta: {
+									one_field: field.field ,
+									junction_field: `${field_related_right.collection}_${field_related_right.field}`
+								}
 							})
 						}
-						fields_related.push(field_left)
-
-						let field_related_right = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
 						let field_right = {
 							collection: collection_temp.collection ,
-							field: `${field.collection}_${field_related_right.field}` ,
+							field: `${field_related_right.collection}_${field_related_right.field}` ,
 							...this.fieldsClass.generateM2o(field_related_right.collection , {
 								hidden: true
+							} , {} , {
+								meta: {
+									junction_field: `${field_related_left.collection}_${field_related_left.field}`
+								}
 							})
 						}
+
+						fields_related.push(field_left)
 						fields_related.push(field_right)
 
-						relations_migration.push(...this.relationsClass.genM2m(collection_temp.collection , field.field , {
-							field: field_left.field ,
-							collection: field_left.collection
-						} , {
-							field: field_right.field ,
-							collection: field_right.collection
-						}))
-
+						// relations_migration.push(...this.relationsClass.genM2m(collection_temp.collection , field.field , {
+						// 	field: field_left.field ,
+						// 	collection: field_left.collection
+						// } , {
+						// 	field: field_right.field ,
+						// 	collection: field_right.collection
+						// }))
 
 						if (field.fields_extend) {
 							let fields_extend = this.parseFields(collection_temp.collection , field.fields_extend)
@@ -169,7 +188,6 @@ module.exports = class MigrationClass {
 				}
 			}
 		}
-
 
 		function compareObjects(a , b) {
 			// Xử lý các phần tử không có thuộc tính "fields" hoặc "schema"
@@ -193,6 +211,7 @@ module.exports = class MigrationClass {
 
 		const pushFieldToCollection = (fields , collections) => {
 			for (let collection of collections) {
+
 				collection.fields = fields.filter(field => field.collection === collection.collection)
 					.map(field => ({
 						collection: field.collection ,
@@ -216,6 +235,8 @@ module.exports = class MigrationClass {
 
 		parseFieldsRelated()
 
+
+		//console.log("relations_migration",this.getUniqueArray(relations_migration))
 		//console.log("fields_primary",fields_primary)
 		//console.log("field_normal",field_normal)
 		//console.log("fields_related",fields_related)
@@ -224,11 +245,10 @@ module.exports = class MigrationClass {
 
 		pushFieldToCollection([...fields_primary , ...field_normal , ...fields_related] , collections_parse)
 
-		console.log(collections_parse)
 
 		return {
-			collections: collections_parse ,
-			relations: relations_migration
+			collections: this.getUniqueArray(collections_parse) ,
+			relations: this.getUniqueArray(relations_migration)
 		}
 		// return Promise.all([
 		// 	this.collectionsClass.readAll(),
@@ -293,5 +313,10 @@ module.exports = class MigrationClass {
 		}
 	}
 
-
+	getUniqueArray(arr) {
+		return arr.filter((item , index) => {
+			return arr.indexOf(item) === index;
+		});
+	}
 }
+

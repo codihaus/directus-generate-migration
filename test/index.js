@@ -20,18 +20,18 @@ const config = [
 	// 		name: genField.genNormal()
 	// 	}
 	// } ,
-	{
-		collection: {
-			name: "languages" ,
-			meta: {
-				group: "news_groups"
-			}
-		} ,
-		fields: {
-			code: genField.genPrimaryKey("string") ,
-			name: genField.genNormal()
-		}
-	} ,
+	// {
+	// 	collection: {
+	// 		name: "languages" ,
+	// 		meta: {
+	// 			group: "news_groups"
+	// 		}
+	// 	} ,
+	// 	fields: {
+	// 		code: genField.genPrimaryKey("string") ,
+	// 		name: genField.genNormal()
+	// 	}
+	// } ,
 	{
 		collection: {
 			name: "news_groups" ,
@@ -87,18 +87,18 @@ const config = [
 			date_updated: genField.genDatetime("date-updated") ,
 			category: genField.generateM2o("news_category") ,
 			tags: genField.generateM2m("tags") ,
-			translations: genField.generateM2m("languages" , {
-				meta: {
-					special: ["translations"] ,
-					interface: "translations"
-				}
-			} , {
-				title: genField.genNormal() ,
-				intro: genField.genNormal() ,
-				test: genField.generateM2o("languages") ,
-				field_m2o: genField.generateM2o("tags") ,
-				field_m2m: genField.generateM2m("news_category")
-			}) ,
+			// translations: genField.generateM2m("languages" , {
+			// 	meta: {
+			// 		special: ["translations"] ,
+			// 		interface: "translations"
+			// 	}
+			// } , {
+			// 	title: genField.genNormal() ,
+			// 	intro: genField.genNormal() ,
+			// 	test: genField.generateM2o("languages") ,
+			// 	field_m2o: genField.generateM2o("tags") ,
+			// 	field_m2m: genField.generateM2m("news_category")
+			// }) ,
 		}
 	}
 ]
@@ -109,7 +109,7 @@ const config = [
 const test = async () =>{
 	let {collections,relations} = directus.convertConfig(config)
 
-	console.log(JSON.stringify(collections,null,4))
+	//console.log(JSON.stringify(collections,null,4))
 
 	await directus.deleteCollections()
 
