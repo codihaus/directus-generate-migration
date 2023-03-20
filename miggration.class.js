@@ -28,11 +28,10 @@ module.exports = class MigrationClass {
 		}
 	}
 
-	static async load(knex , data) {
-		this.schema = await getSchema({database: knex , bypassCache: true});
-		this.collectionsClass = this.collectionsClass.load(knex , this.schema)
-		this.fieldsClass = this.fieldsClass.load(knex , this.schema)
-		this.relationsClass = this.relationsClass.load(knex , this.schema)
+	 async load(knex , data) {
+		this.collectionsClass = this.collectionsClass.load(knex)
+		this.fieldsClass = this.fieldsClass.load(knex)
+		this.relationsClass = this.relationsClass.load(knex)
 
 		this.data = data
 
@@ -55,6 +54,27 @@ module.exports = class MigrationClass {
 		}
 	}
 
+
+	async upKnex(knex,config){
+		let data_directus = await this.loadDataDirectus(knex)
+		let {collections,relations} = this.convertConfig(config,data_directus.collections,data_directus.fields)
+		return this.collectionsClass.createCollections(collections).then(async()=>{
+			return this.relationsClass.createRelations(relations)
+		}).catch(e=>{
+			console.log('Err upKnex:',e)
+		})
+
+	}
+
+	async downKnex(knex,config){
+		let data_directus = await this.loadDataDirectus(knex)
+		let {collections} = this.convertConfig(config,data_directus.collections,data_directus.fields)
+
+		return this.collectionsClass.deleteCollections(collections).catch(e=>{
+			console.log('Err upKnex:',e)
+		})
+
+	}
 
 	parseCollections(data) {
 		try {
@@ -84,12 +104,30 @@ module.exports = class MigrationClass {
 		}
 	}
 
-	generateData(collections_parse) {
-		//data from directus
-		let collections_directus = []
-		let fields_directus = []
-		let fields_primary_directus = fields_directus.filter(field => field.schema && field.schema.is_primary_key) || []
 
+	 async loadDataDirectus(knex) {
+		return this.load(knex).then(migration => {
+			return Promise.all([
+				migration.collectionsClass.readAll() ,
+				migration.fieldsClass.readAll() ,
+				migration.relationsClass.readAll()
+			]).then(data => {
+
+				return {
+					collections: data[0],
+					fields: data[1],
+					relations: data[2]
+				}
+			})
+		}).catch(e => {
+			console.log("Err getAll: " , e)
+		})
+	}
+
+	generateData(collections_parse,collections_directus = [], fields_directus = []) {
+
+		//data from directus
+		let fields_primary_directus = fields_directus.filter(field => field.schema && field.schema.is_primary_key) || []
 
 		//data from migrations
 		let fields_primary = []
@@ -110,6 +148,8 @@ module.exports = class MigrationClass {
 				}
 			}
 		}
+
+
 		const parseFieldsRelated = () => {
 			for (let field of fields_related) {
 				switch (field.type) {
@@ -148,6 +188,9 @@ module.exports = class MigrationClass {
 								meta: {
 									one_field: field.field ,
 									junction_field: `${field_related_right.collection}_${field_related_right.field}`
+								} ,
+								schema: {
+									on_delete: "CASCADE"
 								}
 							})
 						}
@@ -159,6 +202,9 @@ module.exports = class MigrationClass {
 							} , {} , {
 								meta: {
 									junction_field: `${field_related_left.collection}_${field_related_left.field}`
+								} ,
+								schema: {
+									on_delete: "CASCADE"
 								}
 							})
 						}
@@ -250,29 +296,6 @@ module.exports = class MigrationClass {
 			collections: this.getUniqueArray(collections_parse) ,
 			relations: this.getUniqueArray(relations_migration)
 		}
-		// return Promise.all([
-		// 	this.collectionsClass.readAll(),
-		// 	this.fieldsClass.readAll(),
-		// 	this.relationsClass.readAll()
-		// ]).then(data=>{
-		// 	let collections = data[0]
-		// 	let fields = data[1]
-		// 	let relations = data[2]
-		//
-		//
-		// 	let collectionsTemp = []
-		// 	let fieldsTemp = []
-		//
-		// 	for(let item of collections_parse){
-		// 		let primaryField = this.fieldsClass.findFieldPrimaryKey(item.collection.name,item.fields)
-		// 		console.log(primaryField)
-		// 	}
-		//
-		//
-		//
-		// }).catch(e=>{
-		// 	console.log("Err getAll: ",e)
-		// })
 	}
 
 	parseFields(collection , fields) {
