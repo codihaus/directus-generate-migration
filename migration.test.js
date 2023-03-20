@@ -1,9 +1,8 @@
-const MiggrationClass = require('../miggration.class')
-
+const MiggrationClass = require('./miggration.class')
 
 let migration = new MiggrationClass()
-
 let genField = migration.generateField
+
 const config = [
 	// {
 	// 	collection: {
