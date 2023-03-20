@@ -114,7 +114,7 @@ const test = async () =>{
 	await directus.deleteCollections()
 
 	//await directus.createCollections(collections)
-	return directus.createData(collections,relations)
+	//return directus.createData(collections,relations)
 
 }
 

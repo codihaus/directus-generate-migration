@@ -29,9 +29,9 @@ module.exports = class MigrationClass {
 	}
 
 	 async load(knex , data) {
-		this.collectionsClass = this.collectionsClass.load(knex)
-		this.fieldsClass = this.fieldsClass.load(knex)
-		this.relationsClass = this.relationsClass.load(knex)
+		this.collectionsClass = await this.collectionsClass.load(knex)
+		this.fieldsClass = await this.fieldsClass.load(knex)
+		this.relationsClass = await this.relationsClass.load(knex)
 
 		this.data = data
 
@@ -58,8 +58,10 @@ module.exports = class MigrationClass {
 	async upKnex(knex,config){
 		let data_directus = await this.loadDataDirectus(knex)
 		let {collections,relations} = this.convertConfig(config,data_directus.collections,data_directus.fields)
-		return this.collectionsClass.createCollections(collections).then(async()=>{
-			return this.relationsClass.createRelations(relations)
+		return this.load(knex,config).then(async (service)=>{
+			return service.collectionsClass.createCollections(collections).then(async()=>{
+				return this.relationsClass.createRelations(relations)
+			})
 		}).catch(e=>{
 			console.log('Err upKnex:',e)
 		})
@@ -69,9 +71,10 @@ module.exports = class MigrationClass {
 	async downKnex(knex,config){
 		let data_directus = await this.loadDataDirectus(knex)
 		let {collections} = this.convertConfig(config,data_directus.collections,data_directus.fields)
-
-		return this.collectionsClass.deleteCollections(collections).catch(e=>{
-			console.log('Err upKnex:',e)
+		return this.load(knex,config).then(async (service)=>{
+			return service.collectionsClass.deleteCollections(collections)
+		}).catch(e=>{
+			console.log('Err downKnex:',e)
 		})
 
 	}
