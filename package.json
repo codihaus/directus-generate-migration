@@ -1,23 +1,23 @@
 {
-  "name": "directus-migration-tools",
-  "version": "1.0.04",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/codihaus/directus-generate-migration.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/codihaus/directus-generate-migration/issues"
-  },
-  "homepage": "https://github.com/codihaus/directus-generate-migration#readme",
-  "dependencies": {
-    "@directus/sdk": "^10.3.1",
-    "directus": "^9.23.1"
-  }
+    "name": "directus-migration-tools",
+    "version": "1.0.05",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/codihaus/directus-generate-migration.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/codihaus/directus-generate-migration/issues"
+    },
+    "homepage": "https://github.com/codihaus/directus-generate-migration#readme",
+    "dependencies": {
+        "@directus/sdk": "^10.3.1",
+        "directus": "^9.23.1"
+    }
 }
