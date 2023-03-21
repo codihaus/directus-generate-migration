@@ -1,8 +1,8 @@
 {
     "name": "directus-migration-tools",
-    "version": "1.0.07",
+    "version": "1.0.13",
     "description": "",
-    "main": "main.js",
+    "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -20,6 +20,7 @@
         "directus": "^9.23.1"
     },
     "files": [
+        "utils/*",
         "helper/*",
         "lib/*",
         "directus.class.js",
@@ -28,6 +29,7 @@
     "exports": {
         ".": "./index.js",
         "./helper": "./helper",
-        "./lib": "./lib"
+        "./lib": "./lib",
+        "./utils": "./utils"
     }
 }

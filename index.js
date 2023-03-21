@@ -9,7 +9,6 @@ const {
 
 
 const MigrationClass = require('./miggration.class')
-const DirectusClass = require('./directus.class')
 
 const migrationClass = new MigrationClass()
 
@@ -23,7 +22,6 @@ module.exports = {
 	migrateModel,
 
 	//
-	DirectusClass,
 	generateField: migrationClass.generateField,
 	upCreateKnex: async (knex,config)  => migrationClass.upCreateKnex(knex,config),
 	downCreateKnex: async(knex,config) => migrationClass.downCreateKnex(knex,config),
