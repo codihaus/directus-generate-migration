@@ -30,7 +30,6 @@ const config = [
 		collection: {
 			name: "news_groups" ,
 			meta: {
-				collection: "folder_settings" ,
 				icon: "accessibility" ,
 				note: "note string" ,
 				///color: "#2ECDA7" ,
