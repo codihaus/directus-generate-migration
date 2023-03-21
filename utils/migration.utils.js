@@ -162,9 +162,9 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 							collection: collection_temp.collection ,
 							field: `${field_related_right.collection}_${field_related_right.field}` ,
 							...fieldsClass.generateM2o(field_related_right.collection , {
-								meta: {
-									hidden: true
-								}
+								// meta: {
+								// 	hidden: true
+								// }
 							} , {} , {
 								meta: {
 									junction_field: `${field_related_left.collection}_${field_related_left.field}`
