@@ -217,6 +217,9 @@ const generateData=(collections_parse , collections_directus = [] , fields_direc
 	}
 
 	const pushFieldToCollection = (fields , collections) => {
+
+		fields = getUniqueArray(fields)
+
 		for (let collection of collections) {
 
 			collection.fields = fields.filter(field => field.collection === collection.collection)
@@ -227,6 +230,7 @@ const generateData=(collections_parse , collections_directus = [] , fields_direc
 					meta: field.meta ,
 					schema: field.schema
 				}))
+			collection.fields = getUniqueArray(collection.fields)
 
 			if (collection.fields.length === 0) {
 				delete collection.fields
