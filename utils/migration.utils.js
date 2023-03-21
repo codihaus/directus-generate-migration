@@ -122,7 +122,7 @@ const generateData=(collections_parse , collections_directus = [] , fields_direc
 					//create collection temp
 					let collection_temp = collectionsClass.genM2m(field.collection , field.field , [...collections_directus , ...collections_parse])
 					collections_parse.push(collection_temp)
-					fields_related.push({
+					let field_primary_temp = {
 						collection: collection_temp.collection ,
 						field: "id" ,
 						type: "integer" ,
@@ -133,7 +133,9 @@ const generateData=(collections_parse , collections_directus = [] , fields_direc
 						meta: {
 							"hidden": true
 						}
-					})
+					}
+					fields_related.push(field_primary_temp)
+					fields_primary.push(field_primary_temp)
 					//create field related
 					let field_related_left = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
 					let field_related_right = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
