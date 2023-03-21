@@ -22,13 +22,19 @@ module.exports = class MigrationClass {
 			genPrimaryKey: (type = "integer") => this.fieldsClass.generatePrimaryKey(type) ,
 			genNormal: (type , schema , meta) => this.fieldsClass.generateNormal(type , schema , meta) ,
 			genDatetime: (special) => this.fieldsClass.generateDateTime(special) ,
-			generateM2o: (related_collection) => this.fieldsClass.generateM2o(related_collection) ,
+			generateM2o: (related_collection,options) => this.fieldsClass.generateM2o(related_collection,{
+				meta: options?.meta || {} ,
+				schema: options?.schema || {}
+			}) ,
 			generateM2m: (related_collection , options , fields_extend) => this.fieldsClass.generateM2m(related_collection , {
 				meta: options?.meta || {} ,
 				schema: options?.schema || {}
 			} , fields_extend) ,
-			// generateO2m: (related_collection , field_related) => {
-			// }
+			generateO2m: (related_collection ,options) => this.fieldsClass.generateO2m(related_collection , {
+				related_field: options?.related_field || "",
+				meta: options?.meta || {} ,
+				schema: options?.schema || {}
+			}) ,
 		}
 	}
 

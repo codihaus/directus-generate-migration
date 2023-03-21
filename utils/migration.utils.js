@@ -6,7 +6,7 @@ const collectionsClass = new CollectionClass()
 const fieldsClass = new FieldClass()
 const relationsClass = new RelationClass()
 
-const filterFieldsToCreate = (collections,data_directus) => {
+const filterFieldsToCreate = (collections , data_directus) => {
 	let fields_create = []
 	//let fields_update = []
 	for (let collection of collections) {
@@ -40,7 +40,7 @@ const getUniqueArray = (arr) => {
 	});
 }
 
-const convertConfig = (data)=> {
+const convertConfig = (data) => {
 	try {
 		if (!!data && !Array.isArray(data)) throw Error("No data generate")
 
@@ -55,7 +55,7 @@ const convertConfig = (data)=> {
 	}
 }
 
-const parseCollections = (data)=> {
+const parseCollections = (data) => {
 	try {
 		return data.map(item => {
 
@@ -83,7 +83,7 @@ const parseCollections = (data)=> {
 	}
 }
 
-const generateData=(collections_parse , collections_directus = [] , fields_directus = [])=> {
+const generateData = (collections_parse , collections_directus = [] , fields_directus = []) => {
 
 	//data from directus
 	let fields_primary_directus = fields_directus.filter(field => field.schema && field.schema.is_primary_key) || []
@@ -92,108 +92,136 @@ const generateData=(collections_parse , collections_directus = [] , fields_direc
 	let fields_primary = []
 
 	let fields_related = []
-	let field_normal = []
+	let fields_normal = []
 	let relations_migration = []
 
 
-	const pushField = (fields_primary , field_normal , fields_related , fields , collection) => {
+	const pushField = (fields_primary , fields_normal , fields_related , fields , collection) => {
 		for (let field of fields) {
 			if (field.schema && field.collection === collection && field.schema.is_primary_key) {
 				fields_primary.push(field)
 			} else if (field.related_collection && fieldsClass.relatedText.includes(field.type)) {
 				fields_related.push(field)
 			} else {
-				field_normal.push(field)
+				fields_normal.push(field)
 			}
 		}
 	}
 
 
 	const parseFieldsRelated = () => {
-		for (let field of fields_related) {
-			switch (field.type) {
-				case "$M2O$":
-					let field_related = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
-					field.type = field_related.type || "integer" || "string"
-					relations_migration.push(relationsClass.genM2o(field.collection , field.field , field.related_collection , field_related.field , field?.relations_options))
-					break;
-				case  "$M2M$":
-					field.type = "alias"
-					//create collection temp
-					let collection_temp = collectionsClass.genM2m(field.collection , field.field , [...collections_directus , ...collections_parse])
-					collections_parse.push(collection_temp)
-					let field_primary_temp = {
-						collection: collection_temp.collection ,
-						field: "id" ,
-						type: "integer" ,
-						schema: {
-							is_primary_key: true ,
-							has_auto_increment: true
-						} ,
-						meta: {
-							"hidden": true
+		try {
+			for (let field of fields_related) {
+				switch (field.type) {
+					case "$M2O$":
+						let field_related = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
+						field.type = field_related.type || "integer" || "string"
+						relations_migration.push(relationsClass.genM2o(field.collection , field.field , field.related_collection , field_related.field , field?.relations_options))
+						break;
+					case  "$M2M$":
+						field.type = "alias"
+						//create collection temp
+						let collection_temp = collectionsClass.genM2m(field.collection , field.field , [...collections_directus , ...collections_parse])
+						collections_parse.push(collection_temp)
+						let field_primary_temp = {
+							collection: collection_temp.collection ,
+							field: "id" ,
+							type: "integer" ,
+							schema: {
+								is_primary_key: true ,
+								has_auto_increment: true
+							} ,
+							meta: {
+								"hidden": true
+							}
 						}
-					}
-					fields_related.push(field_primary_temp)
-					fields_primary.push(field_primary_temp)
-					//create field related
-					let field_related_left = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
-					let field_related_right = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
+						fields_related.push(field_primary_temp)
+						fields_primary.push(field_primary_temp)
+						//create field related
+						let field_related_left = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
+						let field_related_right = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
 
-					let field_left = {
-						collection: collection_temp.collection ,
-						field: `${field_related_left.collection}_${field_related_left.field}` ,
-						...fieldsClass.generateM2o(field_related_left.collection , {
-							hidden: true
-						} , {} , {
-							meta: {
-								one_field: field.field ,
-								junction_field: `${field_related_right.collection}_${field_related_right.field}`
-							} ,
-							schema: {
-								on_delete: "CASCADE"
-							}
+						let field_left = {
+							collection: collection_temp.collection ,
+							field: `${field_related_left.collection}_${field_related_left.field}` ,
+							...fieldsClass.generateM2o(field_related_left.collection , {
+								meta: {
+									hidden: true
+								}
+							} , {} , {
+								meta: {
+									one_field: field.field ,
+									junction_field: `${field_related_right.collection}_${field_related_right.field}`
+								} ,
+								schema: {
+									on_delete: "CASCADE"
+								}
+							})
+						}
+						let field_right = {
+							collection: collection_temp.collection ,
+							field: `${field_related_right.collection}_${field_related_right.field}` ,
+							...fieldsClass.generateM2o(field_related_right.collection , {
+								meta: {
+									hidden: true
+								}
+							} , {} , {
+								meta: {
+									junction_field: `${field_related_left.collection}_${field_related_left.field}`
+								} ,
+								schema: {
+									on_delete: "CASCADE"
+								}
+							})
+						}
+
+						fields_related.push(field_left)
+						fields_related.push(field_right)
+
+						if (field.fields_extend) {
+							let fields_extend = parseFields(collection_temp.collection , field.fields_extend)
+							//console.log("collection_temp" , collection_temp.fields)
+							pushField(fields_primary , fields_normal , fields_related , [...collection_temp.fields , ...fields_extend] , collection_temp.collection)
+							parseFieldsRelated()
+							//console.log("fields_extend" , fields_primary)
+						}
+						break;
+					case "$O2M$":
+						field.type = "alias"
+						console.log(field)
+
+						//find field primary
+						let field_primary = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
+						//push fields unique
+						let fields_all = getUniqueArray([...fields_primary , ...fields_related , ...fields_normal , ...fields_directus].map(field => ({
+							collection: field.collection ,
+							field: field.field
+						})))
+
+						let name_many_field = fieldsClass.nameField(`${field.collection}_${field_primary.field}` , field.related_collection , fields_all)
+						//create field m2o
+						fields_related.push({
+							collection: field.related_collection ,
+							field: field?.related_field || name_many_field ,
+							...fieldsClass.generateM2o(field.collection , {
+								meta: {
+									hidden: true
+								}
+							} , {
+								meta: {
+									one_field: field.field ,
+								}
+							})
 						})
-					}
-					let field_right = {
-						collection: collection_temp.collection ,
-						field: `${field_related_right.collection}_${field_related_right.field}` ,
-						...fieldsClass.generateM2o(field_related_right.collection , {
-							hidden: true
-						} , {} , {
-							meta: {
-								junction_field: `${field_related_left.collection}_${field_related_left.field}`
-							} ,
-							schema: {
-								on_delete: "CASCADE"
-							}
-						})
-					}
 
-					fields_related.push(field_left)
-					fields_related.push(field_right)
 
-					// relations_migration.push(...relationsClass.genM2m(collection_temp.collection , field.field , {
-					// 	field: field_left.field ,
-					// 	collection: field_left.collection
-					// } , {
-					// 	field: field_right.field ,
-					// 	collection: field_right.collection
-					// }))
-
-					if (field.fields_extend) {
-						let fields_extend = parseFields(collection_temp.collection , field.fields_extend)
-						//console.log("collection_temp" , collection_temp.fields)
-						pushField(fields_primary , field_normal , fields_related , [...collection_temp.fields , ...fields_extend] , collection_temp.collection)
-						parseFieldsRelated()
-						//console.log("fields_extend" , fields_primary)
-					}
-					break;
-				case "$O2M$":
-
-					break;
+						break;
+				}
 			}
+		} catch (e) {
+			console.log("Error parseFieldsRelated: " , e)
 		}
+
 	}
 
 	function compareObjects(a , b) {
@@ -241,7 +269,7 @@ const generateData=(collections_parse , collections_directus = [] , fields_direc
 	}
 
 	for (let item of collections_parse) {
-		pushField(fields_primary , field_normal , fields_related , item.fields , item.collection)
+		pushField(fields_primary , fields_normal , fields_related , item.fields , item.collection)
 	}
 
 	parseFieldsRelated()
@@ -249,12 +277,12 @@ const generateData=(collections_parse , collections_directus = [] , fields_direc
 
 	//console.log("relations_migration",getUniqueArray(relations_migration))
 	//console.log("fields_primary",fields_primary)
-	//console.log("field_normal",field_normal)
+	//console.log("fields_normal",fields_normal)
 	//console.log("fields_related",fields_related)
 	//console.log("relations_migration",relations_migration)
 	//console.log("collections_parse" , collections_parse)
 
-	pushFieldToCollection([...fields_primary , ...field_normal , ...fields_related] , collections_parse)
+	pushFieldToCollection([...fields_primary , ...fields_normal , ...fields_related] , collections_parse)
 
 
 	return {
@@ -263,7 +291,7 @@ const generateData=(collections_parse , collections_directus = [] , fields_direc
 	}
 }
 
-const parseFields=(collection , fields)=> {
+const parseFields = (collection , fields) => {
 	try {
 		let output = []
 		for (let field in fields) {
@@ -291,6 +319,10 @@ const parseFields=(collection , fields)=> {
 					...(fields[field].fields_extend ?? {})
 				}
 			}
+
+			if (!!fields[field].related_field) {
+				field_parse["related_field"] = fields[field].related_field
+			}
 			output.push(field_parse);
 		}
 
@@ -302,9 +334,8 @@ const parseFields=(collection , fields)=> {
 }
 
 
-
 module.exports = {
-	filterFieldsToCreate,
-	getUniqueArray,
+	filterFieldsToCreate ,
+	getUniqueArray ,
 	convertConfig
 }
