@@ -104,3 +104,4 @@ module.exports = {
 		await downCreateKnex(knex,config)
 	} ,
 };
+
