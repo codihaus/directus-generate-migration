@@ -5,7 +5,7 @@ const {
 	relationGen,
 	fieldGen,
 	migrateModel
-} = require('./index')
+} = require('./lib/migration_v1')
 
 
 const MigrationClass = require('./miggration.class')
