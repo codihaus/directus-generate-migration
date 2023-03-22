@@ -19,8 +19,9 @@ module.exports = class MigrationClass {
 		this.relationsClass = new RelationClass()
 
 		this.generateField = {
-			genPrimaryKey: (type = "integer") => this.fieldsClass.generatePrimaryKey(type) ,
-			genNormal: (type , schema , meta) => this.fieldsClass.generateNormal(type , schema , meta) ,
+			genSpecField: this.fieldsClass.fieldDefault,
+			genPrimaryKey: (type = "integer",options) => this.fieldsClass.generatePrimaryKey(type,options) ,
+			genNormal: (type="string" , options) => this.fieldsClass.generateNormal(type , options) ,
 			genDatetime: (special) => this.fieldsClass.generateDateTime(special) ,
 			generateM2o: (related_collection,options) => this.fieldsClass.generateM2o(related_collection,{
 				meta: options?.meta || {} ,
@@ -100,6 +101,7 @@ module.exports = class MigrationClass {
 
 	async downUpdateKnex(knex , config) {
 		await knex.raw('SET FOREIGN_KEY_CHECKS = 0;')
+
 		let {collections , data_directus} = await this.getDataAndConvert(knex , config)
 		let fields_create = filterFieldsToCreate(collections , data_directus)
 
@@ -115,7 +117,7 @@ module.exports = class MigrationClass {
 
 	async getDataAndConvert(knex , config) {
 		let data_directus = await this.loadDataDirectus(knex)
-		let {collections , relations} = convertConfig(config , data_directus.collections , data_directus.fields)
+		let {collections , relations} = convertConfig(config , data_directus)
 
 		return {collections , relations , data_directus}
 	}

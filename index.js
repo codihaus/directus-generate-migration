@@ -23,6 +23,7 @@ module.exports = {
 
 	//
 	generateField: migrationClass.generateField,
+	generateSpecField: migrationClass.generateField.genSpecField,
 	upCreateKnex: async (knex,config)  => migrationClass.upCreateKnex(knex,config),
 	downCreateKnex: async(knex,config) => migrationClass.downCreateKnex(knex,config),
 	upUpdateKnex: async(knex,config)=> migrationClass.upUpdateKnex(knex,config),

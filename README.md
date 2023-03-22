@@ -97,7 +97,103 @@ const config = [
                 field_m2m: generateField.generateM2m("product")
             }),
         }
-    }
+    },
+	{
+		collection: {
+			name: "menus" ,
+		} ,
+		fields: {
+			id: generateField.genPrimaryKey("integer",{
+				meta: {
+					sort: 1
+				}
+			}) ,
+			sort: generateSpecField.sort({
+				meta: {
+					sort: 2
+				}
+			}) ,
+			user_created: generateSpecField.userCreated({
+				meta: {
+					sort: 3
+				}
+			}) ,
+			date_created: generateSpecField.dateCreated({
+				meta: {
+					sort: 4
+				}
+			}) ,
+			name: generateField.genNormal("string" , {
+				meta: {
+					sort: 5
+				}
+			}) ,
+			menu_items: generateField.generateO2m("menu_item" , {
+				related_field: "menu" ,
+				meta: {
+					sort: 6
+				}
+			})
+		}
+	} ,
+	{
+		collection: {
+			name: "menu_item" ,
+			meta: {
+				group: "menus"
+			}
+		} ,
+		fields: {
+			id: generateField.genPrimaryKey("integer",{
+				meta: {
+					sort: 1
+				}
+			}),
+			sort: generateSpecField.sort({
+				meta: {
+					sort: 2
+				}
+			}) ,
+			user_created: generateSpecField.userCreated({
+				meta: {
+					sort: 3
+				}
+			}) ,
+			date_created: generateSpecField.dateCreated({
+				meta: {
+					sort: 4
+				}
+			}) ,
+			name: generateField.genNormal("string" , {
+				meta: {
+					sort: 5
+				}
+			}) ,
+			url: generateField.genNormal("string" , {
+				meta: {
+					sort: 6
+				}
+			}) ,
+			target: generateSpecField.radioButton([
+				{
+					"text": "default" ,
+					"value": "default"
+				} ,
+				{
+					"text": "_blank" ,
+					"value": "_blank"
+				}] , {
+				meta: {
+					sort: 7
+				}
+			}) ,
+			parent: generateField.generateM2o("menu_item",{
+				meta: {
+					sort: 8
+				}
+			})
+		}
+	}
 ]
 
 

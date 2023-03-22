@@ -40,7 +40,7 @@ const getUniqueArray = (arr) => {
 	});
 }
 
-const convertConfig = (data) => {
+const convertConfig = (data,directus_data) => {
 	try {
 		if (!!data && !Array.isArray(data)) throw Error("No data generate")
 
@@ -48,7 +48,7 @@ const convertConfig = (data) => {
 		let collections = parseCollections(data)
 		//console.log("collections: " , JSON.stringify(collections , null , 4))
 
-		return generateData(collections)
+		return generateData(collections,directus_data?.collections?? [], directus_data?.fields?? [])
 
 	} catch (e) {
 		console.log('Error convertConfig: ' , e)
@@ -188,6 +188,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						break;
 					case "$O2M$":
 						field.type = "alias"
+
 						//find field primary
 						let field_primary = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
 						//push fields unique
@@ -202,9 +203,9 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 							collection: field.related_collection ,
 							field: field?.related_field || name_many_field ,
 							...fieldsClass.generateM2o(field.collection , {
-								// meta: {
-								// 	hidden: true
-								// }
+								meta: {
+									hidden: true
+								}
 							} , {
 								meta: {
 									one_field: field.field ,
