@@ -188,8 +188,6 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						break;
 					case "$O2M$":
 						field.type = "alias"
-						console.log(field)
-
 						//find field primary
 						let field_primary = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
 						//push fields unique
