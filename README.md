@@ -1,3 +1,6 @@
+## Install
+```npm i directus-migration-tools```
+
 ## Config
 
 - Migration file ```extensions/migrations/[indentity]-name.js```
