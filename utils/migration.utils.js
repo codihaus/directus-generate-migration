@@ -112,6 +112,10 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 	const parseFieldsRelated = () => {
 		try {
 			for (let field of fields_related) {
+				// if(field?.related_collection && field.related_collection.indexOf("directus_") === 0) {
+				// 	field.related_collection = field.related_collection.replace("directus_","")
+				// }
+
 				switch (field.type) {
 					case "$M2O$":
 						let field_related = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
@@ -148,7 +152,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 								meta: {
 									hidden: true
 								}
-							} , {} , {
+							} , {
 								meta: {
 									one_field: field.field ,
 									junction_field: `${field_related_right.collection}_${field_related_right.field}`
@@ -165,7 +169,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 								meta: {
 									hidden: true
 								}
-							} , {} , {
+							}  , {
 								meta: {
 									junction_field: `${field_related_left.collection}_${field_related_left.field}`
 								} ,
