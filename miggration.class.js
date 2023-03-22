@@ -66,7 +66,7 @@ module.exports = class MigrationClass {
 		await knex.raw('SET FOREIGN_KEY_CHECKS = 0;')
 		let {collections} = await this.getDataAndConvert(knex , config)
 		return this.load(knex , config).then(async (service) => {
-			return service.collectionsClass.deleteCollections(collections.map(item => item.collection))
+			return service.collectionsClass.deleteCollections(collections)
 		}).catch(e => {
 			console.log('Err downCreateKnex:' , e)
 		})
