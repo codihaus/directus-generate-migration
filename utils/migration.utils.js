@@ -125,7 +125,11 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 					case  "$M2M$":
 						field.type = "alias"
 						//create collection temp
-						let collection_temp = collectionsClass.genM2m(field.collection , field.field , [...collections_directus , ...collections_parse])
+						let collection_temp = collectionsClass.genM2m(field.collection , field.field , [...collections_directus , ...collections_parse],{
+							meta: {
+								group: field?.collection ?? null
+							}
+						})
 						collections_parse.push(collection_temp)
 						let field_primary_temp = {
 							collection: collection_temp.collection ,
