@@ -18,12 +18,9 @@ const filterFieldsToCreate = (collections , data_directus) => {
 
 			//Check field of collection exist
 			for (let field of collection.fields) {
-				if (data_directus.fields.find(item => item.collection === collection.collection && item.field === field.field)) {
-					fields_create.push(field)
-				} else {
-					//fields_update.push(field)
+				if (data_directus.fields.some(item => item.collection === collection.collection && item.field === field.field)) {
 					console.log(`Error upUpdateKnex: Field "${field.field}" of collection "${field.collection}" is exist. Please check again`)
-				}
+				} else fields_create.push(field)
 			}
 
 		} catch (e) {
