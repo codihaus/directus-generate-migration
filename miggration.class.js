@@ -85,6 +85,8 @@ module.exports = class MigrationClass {
 		].some(ite => ite.collection === item.collection && ite.field === item.field))
 
 		return this.load(knex , config).then(async (service) => {
+
+
 			if (!!fields_create.length) {
 				await service.fieldsClass.createFields(fields_create)
 			}
