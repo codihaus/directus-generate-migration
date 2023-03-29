@@ -6,7 +6,7 @@ const collectionsClass = new CollectionClass()
 const fieldsClass = new FieldClass()
 const relationsClass = new RelationClass()
 
-const filterFieldsToCreate = (collections , data_directus) => {
+const filterFieldsToCreate = (collections , data_directus,check = true) => {
 	let fields_create = []
 	//let fields_update = []
 	for (let collection of collections) {
@@ -18,13 +18,13 @@ const filterFieldsToCreate = (collections , data_directus) => {
 
 			//Check field of collection exist
 			for (let field of collection.fields) {
-				if (data_directus.fields.some(item => item.collection === collection.collection && item.field === field.field)) {
-					console.log(`Error upUpdateKnex: Field "${field.field}" of collection "${field.collection}" is exist. Please check again`)
+				if (!!check && data_directus.fields.some(item => item.collection === collection.collection && item.field === field.field)) {
+					console.log(`Error filterFieldsToCreate: Field "${field.field}" of collection "${field.collection}" is exist. Please check again`)
 				} else fields_create.push(field)
 			}
 
 		} catch (e) {
-			console.log("Error upUpdateKnex: " , e)
+			console.log("Error filterFieldsToCreate: " , e)
 		}
 	}
 

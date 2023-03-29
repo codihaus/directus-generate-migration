@@ -102,18 +102,20 @@ module.exports = class MigrationClass {
 	}
 
 	async downUpdateKnex(knex , config) {
-		await knex.raw('SET FOREIGN_KEY_CHECKS = 0;')
+		try{
+			await knex.raw('SET FOREIGN_KEY_CHECKS = 0;')
 
-		let {collections , data_directus} = await this.getDataAndConvert(knex , config)
-		let fields_create = filterFieldsToCreate(collections , data_directus)
+			let {collections , data_directus} = await this.getDataAndConvert(knex , config)
+			let fields_create = filterFieldsToCreate(collections , data_directus,false)
 
-		return this.load(knex , config).then(async (service) => {
-			return service.fieldsClass.deleteField(fields_create)
-		}).catch(e => {
-			console.log('Err downUpdateKnex:' , e)
-		})
-		await knex.raw('SET FOREIGN_KEY_CHECKS = 1;')
+			return this.load(knex , config).then(async (service) => {
+				await service.fieldsClass.deleteFields(fields_create)
+			})
 
+			await knex.raw('SET FOREIGN_KEY_CHECKS = 1;')
+		}catch (e){
+			console.log("Err downUpdateKnex: ",e)
+		}
 	}
 
 
