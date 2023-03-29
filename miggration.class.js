@@ -60,18 +60,18 @@ module.exports = class MigrationClass {
 		}).catch(e => {
 			console.log('Err upCreateKnex:' , e)
 		})
-
 	}
 
 	async downCreateKnex(knex , config) {
-		await knex.raw('SET FOREIGN_KEY_CHECKS = 0;')
+		await this.setCheckForeignKey(false,knex)
 		let {collections} = await this.getDataAndConvert(knex , config)
 		return this.load(knex , config).then(async (service) => {
-			return service.collectionsClass.deleteCollections(collections)
+			return service.collectionsClass.deleteCollections(collections).then(
+				async()=> this.setCheckForeignKey(true,knex)
+			)
 		}).catch(e => {
 			console.log('Err downCreateKnex:' , e)
 		})
-		await knex.raw('SET FOREIGN_KEY_CHECKS = 1;')
 	}
 
 	async upUpdateKnex(knex , config) {
@@ -103,19 +103,26 @@ module.exports = class MigrationClass {
 
 	async downUpdateKnex(knex , config) {
 		try{
-			await knex.raw('SET FOREIGN_KEY_CHECKS = 0;')
+			await this.setCheckForeignKey(false,knex)
 
 			let {collections , data_directus} = await this.getDataAndConvert(knex , config)
 			let fields_create = filterFieldsToCreate(collections , data_directus,false)
 
 			return this.load(knex , config).then(async (service) => {
 				await service.fieldsClass.deleteFields(fields_create)
+
+				await this.setCheckForeignKey(true,knex)
 			})
 
-			await knex.raw('SET FOREIGN_KEY_CHECKS = 1;')
 		}catch (e){
 			console.log("Err downUpdateKnex: ",e)
 		}
+	}
+
+	async setCheckForeignKey(key,knex){
+		return knex.raw(`SET FOREIGN_KEY_CHECKS = ${!!key ? 1 : 0};`).catch(e=>{
+			console.log("Error setCheckForeignKey: ",e)
+		})
 	}
 
 
