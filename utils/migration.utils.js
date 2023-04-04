@@ -223,12 +223,12 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 							// find relation m2o from local + directus
 							let relationM2oUpdate = relations_migration.find(ite =>
 								ite.field === field.related_field &&
-								ite.collection === field.collection &&
-								ite.related_collection === field.related_collection
+								ite.collection === field.related_collection &&
+								ite.related_collection === field.collection
 							) || relations_directus.find(ite =>
 								ite.field === field.related_field &&
-								ite.collection === field.collection &&
-								ite.related_collection === field.related_collection
+								ite.collection === field.related_collection &&
+								ite.related_collection === field.collection
 							) || false
 
 
