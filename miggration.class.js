@@ -54,11 +54,16 @@ module.exports = class MigrationClass {
 
 
 	async upCreateKnex(knex , config) {
-		let {collections , relations} = await this.getDataAndConvert(knex , config)
+		let {collections , relations,update} = await this.getDataAndConvert(knex , config)
 
 		return this.load(knex , config).then(async (service) => {
 			return service.collectionsClass.createCollections(collections).then(async () => {
-				return this.relationsClass.createRelations(relations)
+				await this.relationsClass.createRelations(relations)
+				if(!!update){
+					if(update.relations && update.relations.length>0){
+						await this.relationsClass.updateRelations(update.relations)
+					}
+				}
 			})
 		}).catch(e => {
 			console.log('Err upCreateKnex:' , e)
@@ -78,7 +83,7 @@ module.exports = class MigrationClass {
 	}
 
 	async upUpdateKnex(knex , config) {
-		let {collections , data_directus , relations} = await this.getDataAndConvert(knex , config)
+		let {collections , data_directus , relations, update} = await this.getDataAndConvert(knex , config)
 
 		let fields_create = filterFieldsToCreate(collections , data_directus)
 
@@ -99,6 +104,13 @@ module.exports = class MigrationClass {
 			if (!!relations.length) {
 				await service.relationsClass.createRelations(relations)
 			}
+
+			if(!!update){
+				if(update.relations && update.relations.length>0){
+					await this.relationsClass.updateRelations(update.relations)
+				}
+			}
+
 		}).catch(e => {
 			console.log('Err upUpdateKnex:' , e)
 		})
@@ -131,9 +143,9 @@ module.exports = class MigrationClass {
 
 	async getDataAndConvert(knex , config) {
 		let data_directus = await this.loadDataDirectus(knex)
-		let {collections , relations} = convertConfig(config , data_directus)
+		let {collections , relations, update} = convertConfig(config , data_directus)
 
-		return {collections , relations , data_directus}
+		return {collections , relations ,update, data_directus}
 	}
 
 	async loadDataDirectus(knex) {

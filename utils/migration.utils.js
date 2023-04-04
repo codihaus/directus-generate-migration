@@ -45,7 +45,7 @@ const convertConfig = (data,directus_data) => {
 		let collections = parseCollections(data)
 		//console.log("collections: " , JSON.stringify(collections , null , 4))
 
-		return generateData(collections,directus_data?.collections?? [], directus_data?.fields?? [])
+		return generateData(collections,directus_data?.collections?? [], directus_data?.fields?? [], directus_data.relations ?? [])
 
 	} catch (e) {
 		console.log('Error convertConfig: ' , e)
@@ -80,7 +80,7 @@ const parseCollections = (data) => {
 	}
 }
 
-const generateData = (collections_parse , collections_directus = [] , fields_directus = []) => {
+const generateData = (collections_parse , collections_directus = [] , fields_directus = [],relations_directus = []) => {
 
 	//data from directus
 	let fields_primary_directus = fields_directus.filter(field => field.schema && field.schema.is_primary_key) || []
@@ -91,7 +91,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 	let fields_related = []
 	let fields_normal = []
 	let relations_migration = []
-
+	let relations_update = []
 
 	const pushField = (fields_primary , fields_normal , fields_related , fields , collection) => {
 		for (let field of fields) {
@@ -121,6 +121,11 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						if(field.field_o2m){
 							if(field.field_o2m.create && field.field_o2m.field_name){
 								fields_related.push({
+									collection: field.related_collection,
+									field: field.field_o2m.field_name,
+									...fieldsClass.generateO2m(field.collection,field.field)
+								})
+								console.log({
 									collection: field.related_collection,
 									field: field.field_o2m.field_name,
 									...fieldsClass.generateO2m(field.collection,field.field)
@@ -203,30 +208,57 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 					case "$O2M$":
 						field.type = "alias"
 
-						//find field primary
-						let field_primary = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
-						//push fields unique
+						// //find field primary
+						//let field_primary = fields_primary.find(item => item.collection === field.collection) ||
+						// fields_primary_directus.find(item => item.collection === field.collection)
+						// //push fields unique
+
 						let fields_all = getUniqueArray([...fields_primary , ...fields_related , ...fields_normal , ...fields_directus].map(field => ({
 							collection: field.collection ,
 							field: field.field
 						})))
 
-						let name_many_field = fieldsClass.nameField(`${field.collection}_${field_primary.field}` , field.related_collection , fields_all)
+						let fieldM2o = fields_all.find(ite=> ite.collection === field.collection && ite.field === field.field)
+						if(!!fieldM2o){
+							// find relation m2o from local + directus
+							let relationM2oUpdate = relations_migration.find(ite =>
+								ite.field === field.related_field &&
+								ite.collection === field.collection &&
+								ite.related_collection === field.related_collection
+							) || relations_directus.find(ite =>
+								ite.field === field.related_field &&
+								ite.collection === field.collection &&
+								ite.related_collection === field.related_collection
+							) || false
 
-						//create field m2o
-						fields_related.push({
-							collection: field.related_collection ,
-							field: field?.related_field || name_many_field ,
-							...fieldsClass.generateM2o(field.collection , {
-								meta: {
-									hidden: true
-								}
-							} , {
-								meta: {
-									one_field: field.field ,
-								}
-							})
-						})
+
+							if(!!relationM2oUpdate){
+								relations_update.push({
+									...relationM2oUpdate,
+									meta: {
+										...relationM2oUpdate.meta,
+										one_field: field.field
+									}
+								})
+							}
+						}
+
+						// let name_many_field = fieldsClass.nameField(`${field.collection}_${field_primary.field}` , field.related_collection , fields_all)
+						//
+						// //create field m2o
+						// fields_related.push({
+						// 	collection: field.related_collection ,
+						// 	field: field?.related_field || name_many_field ,
+						// 	...fieldsClass.generateM2o(field.collection , {
+						// 		meta: {
+						// 			hidden: true
+						// 		}
+						// 	} , {
+						// 		meta: {
+						// 			one_field: field.field ,
+						// 		}
+						// 	})
+						// })
 
 						break;
 				}
@@ -300,7 +332,10 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 
 	return {
 		collections: getUniqueArray(collections_parse) ,
-		relations: getUniqueArray(relations_migration)
+		relations: getUniqueArray(relations_migration),
+		update: {
+			relations: getUniqueArray(relations_update)
+		}
 	}
 }
 
@@ -336,6 +371,11 @@ const parseFields = (collection , fields) => {
 			if (!!fields[field].related_field) {
 				field_parse["related_field"] = fields[field].related_field
 			}
+
+			if (!!fields[field].field_o2m) {
+				field_parse["field_o2m"] = fields[field].field_o2m
+			}
+
 			output.push(field_parse);
 		}
 
