@@ -63,6 +63,10 @@ module.exports = class MigrationClass {
 					if(update.relations && update.relations.length>0){
 						await this.relationsClass.updateRelations(update.relations)
 					}
+
+					if(update.fields && update.fields.length>0){
+						await this.fieldsClass.createFields(update.fields)
+					}
 				}
 			})
 		}).catch(e => {
@@ -72,10 +76,18 @@ module.exports = class MigrationClass {
 
 	async downCreateKnex(knex , config) {
 		await this.setCheckForeignKey(false,knex)
-		let {collections} = await this.getDataAndConvert(knex , config)
+		let {collections,update} = await this.getDataAndConvert(knex , config)
 		return this.load(knex , config).then(async (service) => {
 			return service.collectionsClass.deleteCollections(collections).then(
-				async()=> this.setCheckForeignKey(true,knex)
+				async()=> {
+					if(!!update){
+
+						if(update.fields && update.fields.length>0){
+							await this.fieldsClass.deleteFields(update.fields)
+						}
+					}
+					await this.setCheckForeignKey(true , knex)
+				}
 			)
 		}).catch(e => {
 			console.log('Err downCreateKnex:' , e)
@@ -109,6 +121,9 @@ module.exports = class MigrationClass {
 				if(update.relations && update.relations.length>0){
 					await this.relationsClass.updateRelations(update.relations)
 				}
+				if(update.fields && update.fields.length>0){
+					await this.fieldsClass.createFields(update.fields)
+				}
 			}
 
 		}).catch(e => {
@@ -120,11 +135,17 @@ module.exports = class MigrationClass {
 		try{
 			await this.setCheckForeignKey(false,knex)
 
-			let {collections , data_directus} = await this.getDataAndConvert(knex , config)
+			let {collections ,update, data_directus} = await this.getDataAndConvert(knex , config)
 			let fields_create = filterFieldsToCreate(collections , data_directus,false)
 
 			return this.load(knex , config).then(async (service) => {
 				await service.fieldsClass.deleteFields(fields_create)
+
+				if(!!update){
+					if(update.fields && update.fields.length>0){
+						await this.fieldsClass.deleteFields(update.fields)
+					}
+				}
 
 				await this.setCheckForeignKey(true,knex)
 			})

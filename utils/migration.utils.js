@@ -92,6 +92,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 	let fields_normal = []
 	let relations_migration = []
 	let relations_update = []
+	let fields_update = []
 
 	const pushField = (fields_primary , fields_normal , fields_related , fields , collection) => {
 		for (let field of fields) {
@@ -121,11 +122,6 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						if(field.field_o2m){
 							if(field.field_o2m.create && field.field_o2m.field_name){
 								fields_related.push({
-									collection: field.related_collection,
-									field: field.field_o2m.field_name,
-									...fieldsClass.generateO2m(field.collection,field.field)
-								})
-								console.log({
 									collection: field.related_collection,
 									field: field.field_o2m.field_name,
 									...fieldsClass.generateO2m(field.collection,field.field)
@@ -240,7 +236,14 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 										one_field: field.field
 									}
 								})
+
+								if(collections_parse.every(ite => ite.collection !== field.collection)){
+									fields_update.push(field)
+								}
 							}
+
+
+
 						}
 
 						// let name_many_field = fieldsClass.nameField(`${field.collection}_${field_primary.field}` , field.related_collection , fields_all)
@@ -334,7 +337,8 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 		collections: getUniqueArray(collections_parse) ,
 		relations: getUniqueArray(relations_migration),
 		update: {
-			relations: getUniqueArray(relations_update)
+			relations: getUniqueArray(relations_update),
+			fields: getUniqueArray(fields_update),
 		}
 	}
 }
