@@ -118,6 +118,15 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						let field_related = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
 						field.type = field_related.type || "integer" || "string"
 						relations_migration.push(relationsClass.genM2o(field.collection , field.field , field.related_collection , field_related.field , field?.relations_options))
+						if(field.field_o2m){
+							if(field.field_o2m.create && field.field_o2m.field_name){
+								fields_related.push({
+									collection: field.related_collection,
+									field: field.field_o2m.field_name,
+									...fieldsClass.generateO2m(field.collection,field.field)
+								})
+							}
+						}
 						break;
 					case  "$M2M$":
 						field.type = "alias"
@@ -203,6 +212,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						})))
 
 						let name_many_field = fieldsClass.nameField(`${field.collection}_${field_primary.field}` , field.related_collection , fields_all)
+
 						//create field m2o
 						fields_related.push({
 							collection: field.related_collection ,
@@ -217,7 +227,6 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 								}
 							})
 						})
-
 
 						break;
 				}
