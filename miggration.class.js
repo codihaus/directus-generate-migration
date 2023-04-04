@@ -25,8 +25,8 @@ module.exports = class MigrationClass {
 			genDatetime: (special) => this.fieldsClass.generateDateTime(special) ,
 			generateM2o: (related_collection,options) => this.fieldsClass.generateM2o(related_collection,{
 				field_o2m: {
-					create: options?.field_o2m || false,
-					field_name: options?.field_name || false
+					create: options?.field_o2m?.create || false,
+					field_name: options?.field_o2m?.field_name || false,
 				},
 				meta: options?.meta || {} ,
 				schema: options?.schema || {}
@@ -35,7 +35,7 @@ module.exports = class MigrationClass {
 				meta: options?.meta || {} ,
 				schema: options?.schema || {}
 			} , fields_extend) ,
-			generateO2m: (related_collection, related_field ,options) => this.fieldsClass.generateO2m(related_collection, related_field, {
+			generateO2m: (related_collection,related_field ,options) => this.fieldsClass.generateO2m(related_collection, related_field, {
 				meta: options?.meta || {} ,
 				schema: options?.schema || {}
 			}) ,
