@@ -12,7 +12,7 @@ const filterFieldsToCreate = (collections , data_directus,check = true) => {
 	for (let collection of collections) {
 		try {
 			//Check collection exist
-			if (data_directus.collections.every(item => item.collection !== collection.collection)) {
+			if (!!check && data_directus.collections.every(item => item.collection !== collection.collection)) {
 				throw new Error(`Collection "${collection.collection}" does not exist. Please check again`)
 			}
 
@@ -175,7 +175,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						}
 						let field_right = {
 							collection: collection_temp.collection ,
-							field: `${field_related_right.collection}_${field_related_right.field}` ,
+							field: `${field_related_right.collection}_${field_related_right.field}` === `${field_related_left.collection}_${field_related_left.field}` ? `${field_related_right.collection}_related_${field_related_right.field}` :  `${field_related_right.collection}_${field_related_right.field}`,
 							...fieldsClass.generateM2o(field_related_right.collection , {
 								meta: {
 									hidden: true

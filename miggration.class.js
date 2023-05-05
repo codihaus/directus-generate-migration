@@ -97,7 +97,14 @@ module.exports = class MigrationClass {
 	async upUpdateKnex(knex , config) {
 		let {collections , data_directus , relations, update} = await this.getDataAndConvert(knex , config)
 
-		let fields_create = filterFieldsToCreate(collections , data_directus)
+		let fields_create = filterFieldsToCreate(collections , data_directus,false)
+
+		let collectionsCreated = collections.filter(collection => !data_directus.collections.map(item => item.collection).includes(collection.collection))
+
+		fields_create = fields_create.filter(item => !collectionsCreated.map(ite => ite.collection).includes(item.collection))
+
+		console.log("collectionsUp: ",collectionsCreated)
+		console.log("fieldsUp: ",fields_create)
 
 		relations = relations.filter(item => [
 			...fields_create ,
@@ -105,26 +112,28 @@ module.exports = class MigrationClass {
 		].some(ite => ite.collection === item.collection && ite.field === item.field))
 
 		return this.load(knex , config).then(async (service) => {
+			return service.collectionsClass.createCollections(collectionsCreated).then(async () => {
 
 
-			if (!!fields_create.length) {
-				await service.fieldsClass.createFields(fields_create)
-			}
-			// if(fields_update.length){
-			// 	await service.fieldsClass.updateFields(fields_update)
-			// }
-			if (!!relations.length) {
-				await service.relationsClass.createRelations(relations)
-			}
-
-			if(!!update){
-				if(update.relations && update.relations.length>0){
-					await this.relationsClass.updateRelations(update.relations)
+				if (!!fields_create.length) {
+					await service.fieldsClass.createFields(fields_create)
 				}
-				if(update.fields && update.fields.length>0){
-					await this.fieldsClass.createFields(update.fields)
+				// if(fields_update.length){
+				// 	await service.fieldsClass.updateFields(fields_update)
+				// }
+				if (!!relations.length) {
+					await service.relationsClass.createRelations(relations)
 				}
-			}
+
+				if(!!update){
+					if(update.relations && update.relations.length>0){
+						await this.relationsClass.updateRelations(update.relations)
+					}
+					if(update.fields && update.fields.length>0){
+						await this.fieldsClass.createFields(update.fields)
+					}
+				}
+			})
 
 		}).catch(e => {
 			console.log('Err upUpdateKnex:' , e)
@@ -138,16 +147,30 @@ module.exports = class MigrationClass {
 			let {collections ,update, data_directus} = await this.getDataAndConvert(knex , config)
 			let fields_create = filterFieldsToCreate(collections , data_directus,false)
 
+
+			let collectionsName = fields_create.filter(item => item?.schema?.is_primary_key).map(item => item.collection)
+			let collectionsDown = collections.filter(item => collectionsName.includes(item.collection))
+
+			fields_create = fields_create.filter(item => !collectionsDown.map(ite => ite.collection).includes(item.collection))
+
+			console.log("collectionsDown: ",collectionsDown)
+			console.log("fieldsDown: ",fields_create)
+
 			return this.load(knex , config).then(async (service) => {
-				await service.fieldsClass.deleteFields(fields_create)
+				return service.collectionsClass.deleteCollections(collectionsDown).then(async ()=>{
 
-				if(!!update){
-					if(update.fields && update.fields.length>0){
-						await this.fieldsClass.deleteFields(update.fields)
+					await service.fieldsClass.deleteFields(fields_create)
+
+					if(!!update){
+						if(update.fields && update.fields.length>0){
+							await this.fieldsClass.deleteFields(update.fields)
+						}
 					}
-				}
 
-				await this.setCheckForeignKey(true,knex)
+					await this.setCheckForeignKey(true,knex)
+				})
+
+
 			})
 
 		}catch (e){
