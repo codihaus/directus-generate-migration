@@ -156,9 +156,13 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						let field_related_left = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
 						let field_related_right = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
 
+
+						let field_left_name =  `${field_related_left.collection}_${field_related_left.field}`
+						let field_right_name = `${field_related_right.collection}_${field_related_right.field}` === `${field_related_left.collection}_${field_related_left.field}` ? `${field_related_right.collection}_related_${field_related_right.field}` :  `${field_related_right.collection}_${field_related_right.field}`
+
 						let field_left = {
 							collection: collection_temp.collection ,
-							field: `${field_related_left.collection}_${field_related_left.field}` ,
+							field: field_left_name ,
 							...fieldsClass.generateM2o(field_related_left.collection , {
 								meta: {
 									hidden: true
@@ -166,7 +170,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 							} , {
 								meta: {
 									one_field: field.field ,
-									junction_field: `${field_related_right.collection}_${field_related_right.field}`
+									junction_field: field_right_name
 								} ,
 								schema: {
 									on_delete: "CASCADE"
@@ -175,14 +179,14 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						}
 						let field_right = {
 							collection: collection_temp.collection ,
-							field: `${field_related_right.collection}_${field_related_right.field}` === `${field_related_left.collection}_${field_related_left.field}` ? `${field_related_right.collection}_related_${field_related_right.field}` :  `${field_related_right.collection}_${field_related_right.field}`,
+							field: field_right_name,
 							...fieldsClass.generateM2o(field_related_right.collection , {
 								meta: {
 									hidden: true
 								}
 							}  , {
 								meta: {
-									junction_field: `${field_related_left.collection}_${field_related_left.field}`
+									junction_field: field_left_name
 								} ,
 								schema: {
 									on_delete: "CASCADE"
