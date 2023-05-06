@@ -105,15 +105,17 @@ module.exports = class MigrationClass {
 
 		console.log("collectionsUp: ",collectionsCreated)
 		console.log("fieldsUp: ",fields_create)
-
-		relations = relations.filter(item => [
-			...fields_create ,
-			//...fields_update
-		].some(ite => ite.collection === item.collection && ite.field === item.field))
+		console.log("relationsUp: ",relations)
+		// relations = relations.filter(item => [
+		// 	...fields_create ,
+		// 	//...fields_update
+		// ].some(ite => ite.collection === item.collection && ite.field === item.field))
 
 		return this.load(knex , config).then(async (service) => {
 			return service.collectionsClass.createCollections(collectionsCreated).then(async () => {
 
+
+				console.log("Relations: ",relations)
 
 				if (!!fields_create.length) {
 					await service.fieldsClass.createFields(fields_create)
