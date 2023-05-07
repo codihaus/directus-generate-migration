@@ -84,7 +84,7 @@ const parseCollections = (data) => {
 	}
 }
 
-const generateData = (collections_parse , directus_data,options) => {
+const generateData = (collections_parse , directus_data, options) => {
 
 
 	let	collections_directus =  directus_data?.collections_directus || []
@@ -118,6 +118,8 @@ const generateData = (collections_parse , directus_data,options) => {
 
 
 	const parseFieldsRelated = (options) => {
+		let mode = (options?.mode && ["up","down"].includes(options?.mode)) ? options.mode : "up"
+
 		try {
 			for (let field of fields_related) {
 				// if(field?.related_collection && field.related_collection.indexOf("directus_") === 0) {
@@ -143,10 +145,7 @@ const generateData = (collections_parse , directus_data,options) => {
 						field.type = "alias"
 						//create collection temp
 
-
 						let allCollections = [...collections_directus , ...collections_parse]
-
-						let mode = (options?.mode && ["up","down"].includes(options?.mode)) ? options.mode : "up"
 
 						if(mode === "up" && allCollections.some(item => item.collection === field.temp_collection)){
 							throw new Error(`[!]--[Error]: collection ${field.temp_collection} is exist`)
@@ -223,7 +222,7 @@ const generateData = (collections_parse , directus_data,options) => {
 							let fields_extend = parseFields(collection_temp.collection , field.fields_extend)
 							//console.log("collection_temp" , collection_temp.fields)
 							pushField(fields_primary , fields_normal , fields_related , [...collection_temp.fields , ...fields_extend] , collection_temp.collection)
-							parseFieldsRelated()
+							parseFieldsRelated(options)
 							//console.log("fields_extend" , fields_primary)
 						}
 						break;
