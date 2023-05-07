@@ -349,15 +349,6 @@ const generateData = (collections_parse , directus_data) => {
 	}
 
 	parseFieldsRelated()
-
-
-	//console.log("relations_migration",getUniqueArray(relations_migration))
-	//console.log("fields_primary",fields_primary)
-	//console.log("fields_normal",fields_normal)
-	//console.log("fields_related",fields_related)
-	//console.log("relations_migration",relations_migration)
-	//console.log("collections_parse" , collections_parse)
-
 	pushFieldToCollection([...fields_primary , ...fields_normal , ...fields_related] , collections_parse)
 
 
