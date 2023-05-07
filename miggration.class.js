@@ -57,6 +57,8 @@ module.exports = class MigrationClass {
 		try {
 			let {collections , relations,update} = await this.getDataAndConvert(knex , config)
 
+			if(!collections) throw new Error("[!]----[Error]: upCreateKnex -> collections not found")
+
 			return this.load(knex , config).then(async (service) => {
 				return service.collectionsClass.createCollections(collections).then(async () => {
 					await this.relationsClass.createRelations(relations)
@@ -80,20 +82,23 @@ module.exports = class MigrationClass {
 	async downCreateKnex(knex , config) {
 		try {
 			await this.setCheckForeignKey(false,knex)
-			let {collections,update} = await this.getDataAndConvert(knex , config)
+			let {collections,update} = await this.getDataAndConvert(knex , config,{
+				mode: "down"
+			})
+
+			let fieldsDown = collections.reduce((pre,current)=>{
+				return pre.push(...current.fields.filter(item => item?.schema?.is_primary_key !== true))
+			},[])
+
+			if(update.fields && update.fields.length>0){
+				fieldsDown.push(...update.fields.filter(item => item?.schema?.is_primary_key !== true))
+			}
 
 			return this.load(knex , config).then(async (service) => {
-				return service.collectionsClass.deleteCollections(collections).then(
-					async()=> {
-						if(!!update){
 
-							if(update.fields && update.fields.length>0){
-								await this.fieldsClass.deleteFields(update.fields)
-							}
-						}
-						await this.setCheckForeignKey(true , knex)
-					}
-				)
+				return this.fieldsClass.deleteFields(fieldsDown)
+					.then(async() => service.collectionsClass.deleteCollections(collections))
+					.then(async() => this.setCheckForeignKey(true , knex))
 			})
 
 		}catch(e){
@@ -118,6 +123,9 @@ module.exports = class MigrationClass {
 			// 	...fields_create ,
 			// 	//...fields_update
 			// ].some(ite => ite.collection === item.collection && ite.field === item.field))
+
+			if(!fields_create) throw new Error("[!]----[Error]: upUpdateKnex -> fields_create not found")
+
 
 			return this.load(knex , config).then(async (service) => {
 				return service.collectionsClass.createCollections(collectionsCreated).then(async () => {
@@ -153,7 +161,9 @@ module.exports = class MigrationClass {
 		try{
 			await this.setCheckForeignKey(false,knex)
 
-			let {collections ,update, data_directus} = await this.getDataAndConvert(knex , config)
+			let {collections ,update, data_directus} = await this.getDataAndConvert(knex , config,{
+				mode: "down"
+			})
 			let fields_create = filterFieldsToCreate(collections , data_directus,false)
 
 
@@ -165,19 +175,35 @@ module.exports = class MigrationClass {
 			console.log("collectionsDown: ",collectionsDown)
 			console.log("fieldsDown: ",fields_create)
 
+
+			let fieldsDown = [...fields_create,...collectionsDown.reduce((pre,current)=>{
+				return pre.push(...current.fields.filter(item => item?.schema?.is_primary_key !== true))
+			},[])]
+
+			if(!!update){
+				if(update.fields && update.fields.length>0){
+					fieldsDown.push(...update.fields)
+				}
+			}
+
 			return this.load(knex , config).then(async (service) => {
-				return service.collectionsClass.deleteCollections(collectionsDown).then(async ()=>{
 
-					await service.fieldsClass.deleteFields(fields_create)
+				return service.fieldsClass.deleteFields(fieldsDown)
+					.then(async() => service.collectionsClass.deleteCollections(collectionsDown))
+					.then(async()=> this.setCheckForeignKey(true,knex))
 
-					if(!!update){
-						if(update.fields && update.fields.length>0){
-							await this.fieldsClass.deleteFields(update.fields)
-						}
-					}
-
-					await this.setCheckForeignKey(true,knex)
-				})
+				// return service.collectionsClass.deleteCollections(collectionsDown).then(async ()=>{
+				//
+				// 	await service.fieldsClass.deleteFields(fields_create)
+				//
+				// 	if(!!update){
+				// 		if(update.fields && update.fields.length>0){
+				// 			await this.fieldsClass.deleteFields(update.fields)
+				// 		}
+				// 	}
+				//
+				// 	await this.setCheckForeignKey(true,knex)
+				// })
 			})
 
 		}catch (e){
@@ -192,9 +218,9 @@ module.exports = class MigrationClass {
 	}
 
 
-	async getDataAndConvert(knex , config) {
+	async getDataAndConvert(knex , config,options) {
 		let data_directus = await this.loadDataDirectus(knex)
-		let {collections , relations, update} = convertConfig(config , data_directus)
+		let {collections , relations, update} = convertConfig(config , data_directus,options)
 
 		return {collections , relations ,update, data_directus}
 	}
