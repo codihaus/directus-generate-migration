@@ -37,7 +37,7 @@ const getUniqueArray = (arr) => {
 	});
 }
 
-const convertConfig = (data,directus_data,options) => {
+const convertConfig = (data,directus_data) => {
 	try {
 		if (!!data && !Array.isArray(data)) throw Error("No data generate")
 
@@ -45,16 +45,16 @@ const convertConfig = (data,directus_data,options) => {
 		let collections = parseCollections(data)
 		//console.log("collections: " , JSON.stringify(collections , null , 4))
 
-		let directus_data = {
+		let data_directus = {
 			fields_directus: directus_data?.fields ?? [],
 			collections_directus: directus_data?.collections?? [],
-			relations_directus: directus_data.relations ?? []
+			relations_directus: directus_data?.relations ?? []
 		}
 
-		return generateData(collections,directus_data,options)
+		return generateData(collections,data_directus)
 
 	} catch (e) {
-		console.log('Error convertConfig: ' , e)
+		console.log('[!]---[Error] ConvertConfig: ' , e)
 	}
 }
 
@@ -86,7 +86,7 @@ const parseCollections = (data) => {
 	}
 }
 
-const generateData = (collections_parse , directus_data ,options) => {
+const generateData = (collections_parse , directus_data) => {
 
 
 	let	collections_directus =  directus_data?.collections_directus || []
@@ -119,7 +119,7 @@ const generateData = (collections_parse , directus_data ,options) => {
 	}
 
 
-	const parseFieldsRelated = (options) => {
+	const parseFieldsRelated = () => {
 		try {
 			for (let field of fields_related) {
 				// if(field?.related_collection && field.related_collection.indexOf("directus_") === 0) {
@@ -144,11 +144,22 @@ const generateData = (collections_parse , directus_data ,options) => {
 					case  "$M2M$":
 						field.type = "alias"
 						//create collection temp
-						let collection_temp = collectionsClass.genM2m(field.collection , field.field , [...collections_directus , ...collections_parse],{
+
+						// let collections_name= {
+						// 	collection_left: field.collection ,
+						// 	collection_right: field.field,
+						// 	collection_temp: field.temp_collection
+						// }
+
+						let allCollections = [...collections_directus , ...collections_parse]
+						if(allCollections.some(item => item.collection===field.temp_collection)){
+							throw new Error(`[!]--[Error]: collection ${field.temp_collection} is exist`)
+						}
+
+						let collection_temp = collectionsClass.genCollectionTempM2M(field.temp_collection ,{
 							meta: {
 								group: field?.collection ?? null
-							},
-							mode: options?.mode ?? "up"
+							}
 						})
 						collections_parse.push(collection_temp)
 						let field_primary_temp = {
@@ -337,7 +348,7 @@ const generateData = (collections_parse , directus_data ,options) => {
 		pushField(fields_primary , fields_normal , fields_related , item.fields , item.collection)
 	}
 
-	parseFieldsRelated(options)
+	parseFieldsRelated()
 
 
 	//console.log("relations_migration",getUniqueArray(relations_migration))
@@ -386,6 +397,12 @@ const parseFields = (collection , fields) => {
 			if (!!fields[field].fields_extend) {
 				field_parse["fields_extend"] = {
 					...(fields[field].fields_extend ?? {})
+				}
+			}
+
+			if (!!fields[field].temp_collection) {
+				field_parse["temp_collection"] = {
+					...(fields[field].temp_collection ?? {})
 				}
 			}
 
