@@ -80,7 +80,7 @@ module.exports = class MigrationClass {
 	async downCreateKnex(knex , config) {
 		try {
 			await this.setCheckForeignKey(false,knex)
-			let {collections,update,relations} = await this.getDataAndConvert(knex , config)
+			let {collections,update} = await this.getDataAndConvert(knex , config)
 
 			return this.load(knex , config).then(async (service) => {
 				return service.collectionsClass.deleteCollections(collections).then(
