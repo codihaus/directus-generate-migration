@@ -57,7 +57,6 @@ module.exports = class MigrationClass {
 		try {
 			let {collections , relations,update} = await this.getDataAndConvert(knex , config)
 
-
 			return this.load(knex , config).then(async (service) => {
 				return service.collectionsClass.createCollections(collections).then(async () => {
 					await this.relationsClass.createRelations(relations)
@@ -99,7 +98,6 @@ module.exports = class MigrationClass {
 
 		}catch(e){
 			console.log('Err downCreateKnex:' , e)
-
 		}
 	}
 
