@@ -68,6 +68,30 @@ const config = [
         fields: {
             id: generateField.genPrimaryKey(),
             title: generateField.genNormal(),
+            translations: generateSpecField.translations("languages", "projects_categories_translations",{
+                title: generateField.genNormal(),
+            },{
+				meta: {
+					display: "translations",
+					display_options: {
+						template: "{{title}}",
+						languageField: "name",
+						defaultLanguage: "vi-Vi",
+						userLanguage: true,
+					},
+				},
+            }),
+			files: generateSpecField.files("news_category_files",{
+				meta: {
+					hidden: true,
+				},
+			}),
+			content: generateSpecField.wysiwyg({
+				meta: {
+					hidden: true,
+					conditions: [overviewAndProblemsCondition],
+				},
+			}),
         }
     },
     {
@@ -83,8 +107,8 @@ const config = [
             date_created: generateField.genDatetime("date-created"),
             date_updated: generateField.genDatetime("date-updated"),
             category: generateField.generateM2o("news_category"),
-            tags: generateField.generateM2m("tags"),
-            translations: generateField.generateM2m("languages", {
+            tags: generateField.generateM2m("tags","news_tags"),
+            translations: generateField.generateM2m("languages","news_translations", {
                 meta: {
                     special: ["translations"],
                     interface: "translations"
@@ -94,7 +118,7 @@ const config = [
                 intro: generateField.genNormal(),
                 test: generateField.generateM2o("languages"),
                 field_m2o: generateField.generateM2o("tags"),
-                field_m2m: generateField.generateM2m("product")
+                field_m2m: generateField.generateM2m("product","news_product_related")
             }),
         }
     },
