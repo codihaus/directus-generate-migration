@@ -146,7 +146,9 @@ module.exports = class MigrationClass {
 		try{
 			await this.setCheckForeignKey(false,knex)
 
-			let {collections ,update, data_directus} = await this.getDataAndConvert(knex , config)
+			let {collections ,update, data_directus} = await this.getDataAndConvert(knex , config,{
+				mode: "down"
+			})
 			let fields_create = filterFieldsToCreate(collections , data_directus,false)
 
 
@@ -187,9 +189,9 @@ module.exports = class MigrationClass {
 	}
 
 
-	async getDataAndConvert(knex , config) {
+	async getDataAndConvert(knex , config,options) {
 		let data_directus = await this.loadDataDirectus(knex)
-		let {collections , relations, update} = convertConfig(config , data_directus)
+		let {collections , relations, update} = convertConfig(config , data_directus,options)
 
 		return {collections , relations ,update, data_directus}
 	}

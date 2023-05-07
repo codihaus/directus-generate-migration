@@ -37,7 +37,7 @@ const getUniqueArray = (arr) => {
 	});
 }
 
-const convertConfig = (data,directus_data) => {
+const convertConfig = (data,directus_data,options) => {
 	try {
 		if (!!data && !Array.isArray(data)) throw Error("No data generate")
 
@@ -45,7 +45,13 @@ const convertConfig = (data,directus_data) => {
 		let collections = parseCollections(data)
 		//console.log("collections: " , JSON.stringify(collections , null , 4))
 
-		return generateData(collections,directus_data?.collections?? [], directus_data?.fields?? [], directus_data.relations ?? [])
+		let directus_data = {
+			fields_directus: directus_data?.fields ?? [],
+			collections_directus: directus_data?.collections?? [],
+			relations_directus: directus_data.relations ?? []
+		}
+
+		return generateData(collections,directus_data,options)
 
 	} catch (e) {
 		console.log('Error convertConfig: ' , e)
@@ -80,7 +86,13 @@ const parseCollections = (data) => {
 	}
 }
 
-const generateData = (collections_parse , collections_directus = [] , fields_directus = [],relations_directus = []) => {
+const generateData = (collections_parse , directus_data ,options) => {
+
+
+	let	collections_directus =  directus_data?.collections_directus || []
+	let	fields_directus =  directus_data?.fields_directus || []
+	let	relations_directus =  directus_data?.relations_directus || []
+
 
 	//data from directus
 	let fields_primary_directus = fields_directus.filter(field => field.schema && field.schema.is_primary_key) || []
@@ -107,7 +119,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 	}
 
 
-	const parseFieldsRelated = () => {
+	const parseFieldsRelated = (options) => {
 		try {
 			for (let field of fields_related) {
 				// if(field?.related_collection && field.related_collection.indexOf("directus_") === 0) {
@@ -135,7 +147,8 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 						let collection_temp = collectionsClass.genM2m(field.collection , field.field , [...collections_directus , ...collections_parse],{
 							meta: {
 								group: field?.collection ?? null
-							}
+							},
+							mode: options?.mode ?? "up"
 						})
 						collections_parse.push(collection_temp)
 						let field_primary_temp = {
@@ -324,7 +337,7 @@ const generateData = (collections_parse , collections_directus = [] , fields_dir
 		pushField(fields_primary , fields_normal , fields_related , item.fields , item.collection)
 	}
 
-	parseFieldsRelated()
+	parseFieldsRelated(options)
 
 
 	//console.log("relations_migration",getUniqueArray(relations_migration))
