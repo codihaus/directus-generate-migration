@@ -173,17 +173,10 @@ const generateData = (collections_parse , directus_data, options) => {
 						}
 						fields_related.push(field_primary_temp)
 						fields_primary.push(field_primary_temp)
-
 						//create field related
 						let field_related_left = fields_primary.find(item => item.collection === field.collection) || fields_primary_directus.find(item => item.collection === field.collection)
 						let field_related_right = fields_primary.find(item => item.collection === field.related_collection) || fields_primary_directus.find(item => item.collection === field.related_collection)
-						if(field?.fields_extend?.field_left){
 
-							field_left_name = field.fields_extend.field_left
-						}
-						if(field?.fields_extend?.field_right){
-							field_right_name = field.fields_extend.field_right
-						}
 
 						let field_left_name =  `${field_related_left.collection}_${field_related_left.field}`
 						let field_right_name = `${field_related_right.collection}_${field_related_right.field}` === `${field_related_left.collection}_${field_related_left.field}` ? `${field_related_right.collection}_related_${field_related_right.field}` :  `${field_related_right.collection}_${field_related_right.field}`
@@ -225,18 +218,8 @@ const generateData = (collections_parse , directus_data, options) => {
 						fields_related.push(field_left)
 						fields_related.push(field_right)
 
-						if (field?.fields_extend?.fields_data) {
-
-							let fields_extend = parseFields(collection_temp.collection , field.fields_extend.fields_data)
-
-							if(field?.fields_extend?.field_left || field?.fields_extend?.field_right){
-								let name_left = field?.fields_extend?.field_left
-								let name_right = field?.fields_extend?.field_right
-
-								if(fields_extend.some(item => item.field === name_left || item.field === name_right)){
-									throw new Error(`[!]--[Error]: field_left / field_right in  ${field.temp_collection} is exist`)
-								}
-							}
+						if (field.fields_extend) {
+							let fields_extend = parseFields(collection_temp.collection , field.fields_extend)
 							//console.log("collection_temp" , collection_temp.fields)
 							pushField(fields_primary , fields_normal , fields_related , [...collection_temp.fields , ...fields_extend] , collection_temp.collection)
 							parseFieldsRelated(options)
